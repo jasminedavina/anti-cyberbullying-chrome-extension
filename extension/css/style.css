@@ -1,0 +1,59 @@
+.acb-label {
+  display: inline-block;
+  margin: 0 8px 6px 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #ffffff;
+}
+
+.acb-label--safe {
+  background: #2e7d32;
+}
+
+.acb-label--warning {
+  background: #f9a825;
+}
+
+.acb-label--toxic {
+  background: #c62828;
+}
+
+.acb-comment {
+  position: relative;
+}
+
+.acb-comment--safe {
+  outline: 2px solid rgba(46, 125, 50, 0.3);
+}
+
+.acb-comment--warning {
+  outline: 2px solid rgba(249, 168, 37, 0.4);
+}
+
+.acb-comment--toxic {
+  outline: 2px solid rgba(198, 40, 40, 0.5);
+}
+
+.acb-comment-body--blurred {
+  filter: blur(4px);
+}
+
+.acb-reveal {
+  margin: 0 0 6px 0;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: #1e88e5;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.acb-reveal:hover {
+  background: #1565c0;
+}

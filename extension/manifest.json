@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Anti-Cyberbullying (Reader)",
+  "version": "0.1.0",
+  "description": "Detects toxic Reddit comments in real time.",
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.reddit.com/*",
+    "https://old.reddit.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.reddit.com/*",
+        "https://old.reddit.com/*"
+      ],
+      "js": [
+        "utils/reddit-parser.js",
+        "ui/comment-highlighter.js",
+        "content_scripts/reddit-reader.js"
+      ],
+      "css": [
+        "css/style.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
