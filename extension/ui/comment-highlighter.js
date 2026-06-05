@@ -46,7 +46,12 @@
   const applyBlur = (commentNode) => {
     if (commentNode.classList.contains('acb-comment--revealed')) return;
     const bodyNode = findBodyNode(commentNode);
-    bodyNode.classList.add('acb-comment-body--blurred');
+    // Only add blur class to a child body node, not the comment root itself.
+    // When bodyNode === commentNode (shreddit-comment fallback), blur is handled
+    // via CSS targeting <p> tags so the reveal button stays unblurred.
+    if (bodyNode !== commentNode) {
+      bodyNode.classList.add('acb-comment-body--blurred');
+    }
     ensureRevealButton(commentNode, bodyNode);
   };
 
