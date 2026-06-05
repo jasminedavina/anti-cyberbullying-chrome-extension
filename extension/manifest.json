@@ -4,13 +4,28 @@
   "version": "0.1.0",
   "description": "Detects toxic Reddit comments in real time.",
   "permissions": [
-    "storage"
+    "storage",
+    "offscreen"
   ],
   "host_permissions": [
+    "https://cdn.jsdelivr.net/*",
+    "https://generativelanguage.googleapis.com/*",
     "https://reddit.com/*",
     "https://*.reddit.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["models/*", "utils/ort.min.js", "utils/bert-tokenizer.js", "offscreen.html", "offscreen.js"],
+      "matches": ["<all_urls>"]
+    }
   ],
   "content_scripts": [
     {
@@ -23,7 +38,9 @@
       "js": [
         "utils/reddit-parser.js",
         "utils/model-client.js",
+        "utils/detox-rewriter.js",
         "ui/comment-highlighter.js",
+        "ui/thread-heatmap.js",
         "content_scripts/reddit-reader.js",
         "content_scripts/typing-prevention.js"
       ],

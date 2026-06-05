@@ -1,2 +1,6 @@
 task.md
 yBully/
+# Large model files — generate with personC/export_to_onnx.py
+extension/models/*.onnx
+extension/models/*.onnx.data
+
