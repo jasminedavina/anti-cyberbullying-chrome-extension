@@ -8,11 +8,17 @@
   ],
   "host_permissions": [
     "http://127.0.0.1:5000/*",
+    "https://huggingface.co/*",
+    "https://cdn-lfs.huggingface.co/*",
+    "https://cdn-lfs-us-1.huggingface.co/*",
     "https://reddit.com/*",
     "https://*.reddit.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
       "matches": [
