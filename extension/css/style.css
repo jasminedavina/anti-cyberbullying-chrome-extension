@@ -84,12 +84,6 @@ div[data-testid="comment"].acb-comment--toxic::before { background: #c62828; }
   letter-spacing: 1.5px;
   text-transform: uppercase;
   pointer-events: none;
-  animation: acb-tap-pulse 2.2s ease-in-out infinite;
-}
-
-@keyframes acb-tap-pulse {
-  0%, 100% { opacity: 1;    transform: scale(1);    }
-  50%       { opacity: 0.6; transform: scale(1.05); }
 }
 
 /* ── Thread heatmap ──────────────────────────────────────────── */
