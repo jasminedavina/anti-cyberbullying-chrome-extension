@@ -41,6 +41,20 @@
   filter: blur(4px);
 }
 
+/* shreddit-comment (new Reddit) — blur paragraph content directly */
+shreddit-comment.acb-comment--toxic p,
+shreddit-comment.acb-comment--warning p {
+  filter: blur(5px);
+  user-select: none;
+  pointer-events: none;
+}
+
+shreddit-comment.acb-comment--revealed p {
+  filter: none;
+  user-select: auto;
+  pointer-events: auto;
+}
+
 .acb-reveal {
   margin: 0 0 6px 0;
   padding: 2px 6px;

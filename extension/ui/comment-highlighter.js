@@ -4,7 +4,7 @@
     warning: { text: 'Warning', className: 'acb-label--warning' },
     toxic: { text: 'Toxic', className: 'acb-label--toxic' }
   };
-  const BODY_SELECTORS = ['div[data-testid="comment"]', 'div[data-test-id="comment"]', '.md'];
+  const BODY_SELECTORS = ['div[slot="comment"]', 'div[data-testid="comment"]', 'div[data-test-id="comment"]', '.md'];
 
   const ensureBadge = (commentNode) => {
     let badge = commentNode.querySelector('.acb-label');
