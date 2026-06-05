@@ -57,3 +57,84 @@
 .acb-reveal:hover {
   background: #1565c0;
 }
+
+.acb-prevention-panel {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 1px solid #d7dadc;
+  border-left-width: 4px;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #1c1c1c;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.acb-prevention-panel__main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.acb-prevention-panel__title {
+  font-size: 13px;
+}
+
+.acb-prevention-panel__score {
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.acb-prevention-panel__message,
+.acb-prevention-panel__rewrite {
+  margin: 6px 0 0;
+}
+
+.acb-prevention-panel__suggestion {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #edeff1;
+}
+
+.acb-prevention-panel__rewrite {
+  padding: 8px;
+  border-radius: 4px;
+  background: #f6f7f8;
+}
+
+.acb-prevention-panel__apply {
+  margin-top: 8px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 4px;
+  background: #0079d3;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.acb-prevention-panel__apply:hover {
+  background: #0060a8;
+}
+
+.acb-prevention-panel--idle {
+  border-left-color: #878a8c;
+}
+
+.acb-prevention-panel--safe {
+  border-left-color: #2e7d32;
+}
+
+.acb-prevention-panel--warning {
+  border-left-color: #f9a825;
+}
+
+.acb-prevention-panel--toxic {
+  border-left-color: #c62828;
+}

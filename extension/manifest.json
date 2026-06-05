@@ -7,19 +7,25 @@
     "storage"
   ],
   "host_permissions": [
+    "https://reddit.com/*",
+    "https://*.reddit.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*"
   ],
   "content_scripts": [
     {
       "matches": [
+        "https://reddit.com/*",
+        "https://*.reddit.com/*",
         "https://www.reddit.com/*",
         "https://old.reddit.com/*"
       ],
       "js": [
         "utils/reddit-parser.js",
+        "utils/model-client.js",
         "ui/comment-highlighter.js",
-        "content_scripts/reddit-reader.js"
+        "content_scripts/reddit-reader.js",
+        "content_scripts/typing-prevention.js"
       ],
       "css": [
         "css/style.css"

@@ -1,15 +1,14 @@
 (() => {
   const parser = window.redditParser;
   const highlighter = window.commentHighlighter;
+  const modelClient = window.acbModelClient;
 
-  if (!parser || !highlighter) {
-    console.warn('Anti-cyberbullying: missing parser or highlighter.');
+  if (!parser || !highlighter || !modelClient) {
+    console.warn('Anti-cyberbullying: missing parser, highlighter, or model client.');
     return;
   }
 
   const seenComments = new WeakSet();
-
-  const getMockLabel = (text) => (/stupid/i.test(text) ? 'toxic' : 'safe');
 
   const scanComments = (root = document) => {
     const nodes = parser.getCommentNodes(root);
@@ -20,8 +19,14 @@
       const text = parser.extractCommentText(node);
       if (!text) continue;
 
-      const label = getMockLabel(text);
-      highlighter.applyLabel(node, label);
+      modelClient
+        .predict(text)
+        .then((prediction) => {
+          highlighter.applyLabel(node, prediction.label);
+        })
+        .catch((error) => {
+          console.warn('Anti-cyberbullying: comment prediction failed.', error);
+        });
     }
   };
 
