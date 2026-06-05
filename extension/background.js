@@ -24,6 +24,13 @@ async function ensureOffscreen() {
 }
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  // WARMUP: content script asks us to pre-create the offscreen doc + start
+  // loading the ONNX model so the first real PREDICT is fast.
+  if (message.type === 'WARMUP') {
+    ensureOffscreen().catch(() => {});
+    return false;
+  }
+
   // Ignore messages already routed to the offscreen document
   if (message.type !== 'PREDICT' || message.target === 'offscreen') return false;
 

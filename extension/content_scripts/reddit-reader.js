@@ -9,6 +9,10 @@
     return;
   }
 
+  // Warm up the service worker + offscreen document immediately so the ONNX
+  // model starts loading before any comments need to be classified.
+  modelClient.warmup?.();
+
   const seenComments = new WeakSet();
 
   const processNode = (node) => {
@@ -18,14 +22,19 @@
     const text = parser.extractCommentText(node);
     if (!text) return;
 
+    // Pass 1 — instant mock label so the UI responds immediately.
+    const mock = modelClient.mockPredict(text);
+    highlighter.applyLabel(node, mock.label);
+
+    // Pass 2 — real ONNX model; update label (and heatmap) when ready.
     modelClient
       .predict(text)
-      .then((prediction) => {
-        highlighter.applyLabel(node, prediction.label);
-        heatmap?.increment(prediction.label);
+      .then((real) => {
+        highlighter.applyLabel(node, real.label);
+        heatmap?.increment(real.label);
       })
-      .catch((err) => {
-        console.warn('Anti-cyberbullying: comment prediction failed.', err);
+      .catch(() => {
+        heatmap?.increment(mock.label);
       });
   };
 

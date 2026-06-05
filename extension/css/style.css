@@ -1,9 +1,12 @@
 /* ── Labels ──────────────────────────────────────────────────── */
-/* Badge is injected as a DOM sibling BEFORE shreddit-comment so it
-   is completely outside the blur zone and the shadow DOM. */
+/* Badge is prepended inside div[slot="comment"] so it is scoped to
+   exactly its own comment. position:relative + high z-index keeps it
+   above the blur overlay; the blur CSS also explicitly excludes it. */
 .acb-label {
   display: inline-block;
-  margin: 0 0 3px 2px;
+  position: relative;
+  z-index: 20;           /* above .acb-reveal-overlay (z-index:10) */
+  margin: 0 0 4px 0;
   padding: 2px 8px;
   border-radius: 4px;
   font-size: 10px;
@@ -12,6 +15,7 @@
   letter-spacing: 0.5px;
   color: #ffffff;
   line-height: 1.6;
+  pointer-events: none;
 }
 
 .acb-label--safe  { background: #2e7d32; }
@@ -28,8 +32,8 @@
   position: relative; /* establishes stacking context for the overlay */
 }
 
-/* Blur every direct child EXCEPT the overlay div itself */
-.acb-comment-body--blurred > *:not(.acb-reveal-overlay) {
+/* Blur every direct child EXCEPT the overlay and the label badge */
+.acb-comment-body--blurred > *:not(.acb-reveal-overlay):not(.acb-label) {
   filter: blur(6px);
   user-select: none;
   pointer-events: none;
