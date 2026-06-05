@@ -13,12 +13,28 @@
 
   // Inserted BEFORE shreddit-comment so it is outside the shadow DOM
   // and can never be blurred.
+  // Uses a stable data-acb-id link so calling this twice for the same node
+  // always returns the same badge — never creates a duplicate.
   const ensureBadge = (commentNode) => {
-    if (commentNode._acbBadge && commentNode._acbBadge.isConnected) {
-      return commentNode._acbBadge;
+    if (commentNode._acbBadge?.isConnected) return commentNode._acbBadge;
+
+    // Assign a stable ID to the comment node on first visit
+    if (!commentNode.dataset.acbId) {
+      commentNode.dataset.acbId = 'acb' + Math.random().toString(36).slice(2, 9);
     }
+    const id = commentNode.dataset.acbId;
+
+    // Find an existing badge linked to this comment (handles duplicate calls)
+    const existing = commentNode.parentElement
+      ?.querySelector(`:scope > .acb-label[data-acb-for="${id}"]`);
+    if (existing) {
+      commentNode._acbBadge = existing;
+      return existing;
+    }
+
     const badge = document.createElement('div');
     badge.className = 'acb-label';
+    badge.dataset.acbFor = id;
     commentNode.insertAdjacentElement('beforebegin', badge);
     commentNode._acbBadge = badge;
     return badge;
