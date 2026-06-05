@@ -13,7 +13,7 @@ async function ensureOffscreen() {
   if (creatingOffscreen) { await creatingOffscreen; return; }
   creatingOffscreen = chrome.offscreen.createDocument({
     url:           OFFSCREEN_URL,
-    reasons:       [chrome.offscreen.Reason.WORKER],
+    reasons:       ['BLOBS'],
     justification: 'Run ToxicBERT ONNX model inference in the browser without a server',
   }).catch(err => {
     // "already exists" error is OK — another wake-up already created it
