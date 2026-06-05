@@ -1,6 +1,6 @@
 // Service worker: loads ToxicBERT model via Transformers.js and handles predictions.
 // Model is downloaded from HuggingFace (~90MB quantized) on first use, then cached.
-importScripts('utils/transformers.min.js');
+import { pipeline } from './utils/transformers.min.js';
 
 const MODEL_ID = 'Xenova/toxic-bert';
 const TOXIC_LABELS  = new Set(['toxic', 'severe_toxic', 'threat']);
@@ -12,7 +12,7 @@ let loading = null;
 const getClassifier = () => {
   if (classifier) return Promise.resolve(classifier);
   if (loading) return loading;
-  loading = self.Transformers.pipeline('text-classification', MODEL_ID, {
+  loading = pipeline('text-classification', MODEL_ID, {
     quantized: true,
     multi_label: true,
   }).then(clf => { classifier = clf; return clf; });
