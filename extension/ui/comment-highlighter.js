@@ -1,13 +1,14 @@
 (() => {
   const LABELS = {
-    safe: { text: 'Safe', className: 'acb-label--safe' },
-    warning: { text: 'Warning', className: 'acb-label--warning' },
+    safe:  { text: 'Safe',  className: 'acb-label--safe'  },
     toxic: { text: 'Toxic', className: 'acb-label--toxic' }
   };
+
+  // Body selectors: the slot div holds the comment text in new Reddit
   const BODY_SELECTORS = ['div[slot="comment"]', 'div[data-testid="comment"]', 'div[data-test-id="comment"]', '.md'];
 
   const ensureBadge = (commentNode) => {
-    let badge = commentNode.querySelector('.acb-label');
+    let badge = commentNode.querySelector(':scope > .acb-label');
     if (!badge) {
       badge = document.createElement('span');
       badge.className = 'acb-label';
@@ -24,56 +25,55 @@
     return commentNode;
   };
 
-  const ensureRevealButton = (commentNode, bodyNode) => {
-    let button = commentNode.querySelector('.acb-reveal');
-    if (button) return button;
+  // Injects "Tap to reveal" overlay INSIDE the body node.
+  // The overlay is a sibling of the blurred children, not a child of them,
+  // so it is NOT affected by the filter: blur on its siblings.
+  const ensureOverlay = (bodyNode, commentNode) => {
+    if (bodyNode.querySelector(':scope > .acb-reveal-overlay')) return;
 
-    button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'acb-reveal';
-    button.textContent = 'Click to reveal';
-    button.addEventListener('click', () => {
+    const overlay = document.createElement('div');
+    overlay.className = 'acb-reveal-overlay';
+
+    const text = document.createElement('span');
+    text.className = 'acb-reveal-text';
+    text.textContent = 'Tap to reveal';
+    overlay.appendChild(text);
+
+    overlay.addEventListener('click', () => {
       bodyNode.classList.remove('acb-comment-body--blurred');
       commentNode.classList.add('acb-comment--revealed');
-      button.remove();
+      overlay.remove();
     });
 
-    const badge = ensureBadge(commentNode);
-    badge.insertAdjacentElement('afterend', button);
-    return button;
+    bodyNode.appendChild(overlay);
   };
 
   const applyBlur = (commentNode) => {
     if (commentNode.classList.contains('acb-comment--revealed')) return;
     const bodyNode = findBodyNode(commentNode);
-    // Only add blur class to a child body node, not the comment root itself.
-    // When bodyNode === commentNode (shreddit-comment fallback), blur is handled
-    // via CSS targeting <p> tags so the reveal button stays unblurred.
-    if (bodyNode !== commentNode) {
-      bodyNode.classList.add('acb-comment-body--blurred');
-    }
-    ensureRevealButton(commentNode, bodyNode);
+    bodyNode.classList.add('acb-comment-body--blurred');
+    ensureOverlay(bodyNode, commentNode);
   };
 
   const clearBlur = (commentNode) => {
     const bodyNode = findBodyNode(commentNode);
     bodyNode.classList.remove('acb-comment-body--blurred');
-    const button = commentNode.querySelector('.acb-reveal');
-    if (button) button.remove();
+    const overlay = bodyNode.querySelector(':scope > .acb-reveal-overlay');
+    if (overlay) overlay.remove();
   };
 
   const applyLabel = (commentNode, label) => {
     if (!commentNode) return;
-    const normalized = LABELS[label] ? label : 'warning';
+    const normalized = LABELS[label] ? label : 'safe';
     const badge = ensureBadge(commentNode);
     const { text, className } = LABELS[normalized];
 
     badge.textContent = text;
-    badge.classList.remove('acb-label--safe', 'acb-label--warning', 'acb-label--toxic');
+    badge.classList.remove('acb-label--safe', 'acb-label--toxic');
     badge.classList.add(className);
 
     commentNode.classList.add('acb-comment');
-    commentNode.classList.remove('acb-comment--safe', 'acb-comment--warning', 'acb-comment--toxic');
+    commentNode.classList.remove('acb-comment--safe', 'acb-comment--toxic');
     commentNode.classList.add(`acb-comment--${normalized}`);
 
     if (normalized === 'safe') {
@@ -83,7 +83,5 @@
     }
   };
 
-  window.commentHighlighter = {
-    applyLabel
-  };
+  window.commentHighlighter = { applyLabel };
 })();

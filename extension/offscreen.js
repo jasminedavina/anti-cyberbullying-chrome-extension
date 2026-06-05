@@ -3,8 +3,6 @@
 //   utils/ort.min.js       → global `ort`  (ONNX Runtime Web v1.17.3)
 //   utils/bert-tokenizer.js → global `BertTokenizer`
 
-const TOXIC_LABELS   = new Set(['toxic', 'severe_toxic', 'threat']);
-const WARNING_LABELS = new Set(['obscene', 'insult', 'identity_hate']);
 const ID2LABEL = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate'];
 
 let session   = null;
@@ -37,13 +35,9 @@ const loadModel = () => {
 const sigmoid = x => 1 / (1 + Math.exp(-x));
 
 const mapLogits = (logits) => {
-  const scores = {};
-  logits.forEach((v, i) => { scores[ID2LABEL[i]] = sigmoid(v); });
-  const toxicScore   = Math.max(...[...TOXIC_LABELS].map(l => scores[l] ?? 0));
-  const warningScore = Math.max(...[...WARNING_LABELS].map(l => scores[l] ?? 0));
-  if (toxicScore   >= 0.5) return { label: 'toxic',   score: toxicScore };
-  if (warningScore >= 0.5) return { label: 'warning', score: warningScore };
-  return { label: 'safe', score: 1 - Math.max(toxicScore, warningScore) };
+  const maxScore = Math.max(...logits.map(sigmoid));
+  if (maxScore >= 0.5) return { label: 'toxic', score: maxScore };
+  return { label: 'safe', score: 1 - maxScore };
 };
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {

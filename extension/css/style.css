@@ -1,3 +1,4 @@
+/* ── Labels ──────────────────────────────────────────────────── */
 .acb-label {
   display: inline-block;
   margin: 0 8px 6px 0;
@@ -9,73 +10,68 @@
   color: #ffffff;
 }
 
-.acb-label--safe {
-  background: #2e7d32;
-}
+.acb-label--safe  { background: #2e7d32; }
+.acb-label--toxic { background: #c62828; }
 
-.acb-label--warning {
-  background: #f9a825;
-}
+/* ── Comment outline ─────────────────────────────────────────── */
+.acb-comment { position: relative; }
 
-.acb-label--toxic {
-  background: #c62828;
-}
+.acb-comment--safe  { outline: 2px solid rgba(46, 125, 50, 0.3); }
+.acb-comment--toxic { outline: 2px solid rgba(198, 40, 40, 0.5); }
 
-.acb-comment {
-  position: relative;
-}
-
-.acb-comment--safe {
-  outline: 2px solid rgba(46, 125, 50, 0.3);
-}
-
-.acb-comment--warning {
-  outline: 2px solid rgba(249, 168, 37, 0.4);
-}
-
-.acb-comment--toxic {
-  outline: 2px solid rgba(198, 40, 40, 0.5);
-}
-
+/* ── Blur: direct content children only (no bleed into nested comments) ── */
 .acb-comment-body--blurred {
-  filter: blur(4px);
+  position: relative; /* establishes stacking context for the overlay */
 }
 
-/* shreddit-comment (new Reddit) — blur paragraph content directly */
-shreddit-comment.acb-comment--toxic p,
-shreddit-comment.acb-comment--warning p {
-  filter: blur(5px);
+/* Blur every direct child EXCEPT the overlay div itself */
+.acb-comment-body--blurred > *:not(.acb-reveal-overlay) {
+  filter: blur(6px);
   user-select: none;
   pointer-events: none;
+  transition: filter 0.25s ease;
 }
 
-shreddit-comment.acb-comment--revealed p {
-  filter: none;
-  user-select: auto;
-  pointer-events: auto;
-}
-
-.acb-reveal {
-  display: block;
-  margin: 4px 0 6px 0;
-  padding: 5px 12px;
-  border: none;
+/* ── "Tap to reveal" overlay ─────────────────────────────────── */
+/* Sits as an absolute sibling on top of the blurred children.
+   Because it is NOT a child of any blurred element, it is never blurred. */
+.acb-reveal-overlay {
+  position: absolute;
+  inset: 0;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
   border-radius: 4px;
-  background: #1e88e5;
+  transition: background 0.2s ease;
+}
+
+.acb-reveal-overlay:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+/* The "Tap to reveal" pill — dark background ensures it reads on any blurred content */
+.acb-reveal-text {
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: rgba(10, 10, 10, 0.58);
   color: #ffffff;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  cursor: pointer;
-  position: relative;
-  z-index: 10;
-  filter: none !important;
+  pointer-events: none;
+  animation: acb-tap-pulse 2.2s ease-in-out infinite;
 }
 
-.acb-reveal:hover {
-  background: #1565c0;
+@keyframes acb-tap-pulse {
+  0%, 100% { opacity: 1;    transform: scale(1);    }
+  50%       { opacity: 0.6; transform: scale(1.05); }
 }
 
+/* ── Typing-prevention panel ─────────────────────────────────── */
 .acb-prevention-panel {
   box-sizing: border-box;
   width: 100%;
@@ -98,20 +94,11 @@ shreddit-comment.acb-comment--revealed p {
   gap: 12px;
 }
 
-.acb-prevention-panel__title {
-  font-size: 13px;
-}
-
-.acb-prevention-panel__score {
-  flex: 0 0 auto;
-  font-size: 12px;
-  font-weight: 700;
-}
+.acb-prevention-panel__title  { font-size: 13px; }
+.acb-prevention-panel__score  { flex: 0 0 auto; font-size: 12px; font-weight: 700; }
 
 .acb-prevention-panel__message,
-.acb-prevention-panel__rewrite {
-  margin: 6px 0 0;
-}
+.acb-prevention-panel__rewrite { margin: 6px 0 0; }
 
 .acb-prevention-panel__suggestion {
   margin-top: 8px;
@@ -137,22 +124,8 @@ shreddit-comment.acb-comment--revealed p {
   cursor: pointer;
 }
 
-.acb-prevention-panel__apply:hover {
-  background: #0060a8;
-}
+.acb-prevention-panel__apply:hover { background: #0060a8; }
 
-.acb-prevention-panel--idle {
-  border-left-color: #878a8c;
-}
-
-.acb-prevention-panel--safe {
-  border-left-color: #2e7d32;
-}
-
-.acb-prevention-panel--warning {
-  border-left-color: #f9a825;
-}
-
-.acb-prevention-panel--toxic {
-  border-left-color: #c62828;
-}
+.acb-prevention-panel--idle  { border-left-color: #878a8c; }
+.acb-prevention-panel--safe  { border-left-color: #2e7d32; }
+.acb-prevention-panel--toxic { border-left-color: #c62828; }

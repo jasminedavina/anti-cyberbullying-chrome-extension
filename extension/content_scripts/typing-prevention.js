@@ -197,7 +197,6 @@
     panel.classList.remove(
       'acb-prevention-panel--idle',
       'acb-prevention-panel--safe',
-      'acb-prevention-panel--warning',
       'acb-prevention-panel--toxic'
     );
 
@@ -218,9 +217,6 @@
     if (label === 'toxic') {
       title.textContent = 'Toxic language detected';
       message.textContent = 'This comment may hurt someone. Consider rewriting it before posting.';
-    } else if (label === 'warning') {
-      title.textContent = 'Tone warning';
-      message.textContent = 'This may read as aggressive. A calmer version could work better.';
     } else {
       title.textContent = 'Looks respectful';
       message.textContent = 'No bullying language detected in this draft.';
@@ -245,15 +241,11 @@
 
     if (text.length < MIN_TEXT_LENGTH) {
       const panel = ensurePanel(editor);
-      panel.classList.remove(
-        'acb-prevention-panel--safe',
-        'acb-prevention-panel--warning',
-        'acb-prevention-panel--toxic'
-      );
+      panel.classList.remove('acb-prevention-panel--safe', 'acb-prevention-panel--toxic');
       panel.classList.add('acb-prevention-panel--idle');
       panel.querySelector('.acb-prevention-panel__title').textContent = 'Start typing to check tone';
       panel.querySelector('.acb-prevention-panel__score').textContent = '';
-      panel.querySelector('.acb-prevention-panel__message').textContent = 'Your warning and rewrite suggestion will appear here.';
+      panel.querySelector('.acb-prevention-panel__message').textContent = 'Feedback will appear here once you start typing.';
       panel.querySelector('.acb-prevention-panel__suggestion').hidden = true;
       return;
     }
