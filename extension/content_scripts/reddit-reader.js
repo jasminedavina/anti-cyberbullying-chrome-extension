@@ -22,21 +22,17 @@
     const text = parser.extractCommentText(node);
     if (!text) return;
 
-    // Pass 1 — instant mock label so the UI responds immediately.
-    const mock = modelClient.mockPredict(text);
-    highlighter.applyLabel(node, mock.label);
-
-    // Pass 2 — real ONNX model; markPending shows "Analyzing…" in heatmap,
-    // increment() resolves it to the health bar when the prediction comes back.
+    // markPending shows "Analyzing…" in the heatmap while the ONNX model runs.
+    // Label is applied only once the real prediction comes back.
     heatmap?.markPending();
     modelClient
       .predict(text)
-      .then((real) => {
-        highlighter.applyLabel(node, real.label);
-        heatmap?.increment(real.label);
+      .then((result) => {
+        highlighter.applyLabel(node, result.label);
+        heatmap?.increment(result.label);
       })
       .catch(() => {
-        heatmap?.increment(mock.label);
+        heatmap?.increment('safe');
       });
   };
 
