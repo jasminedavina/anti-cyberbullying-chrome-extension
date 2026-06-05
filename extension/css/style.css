@@ -213,6 +213,31 @@ mark.acb-toxic-word {
   color: #1c1c1c;
 }
 
+/* Loading state while waiting for Gemini API */
+.acb-rephrased--loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #5f6368;
+  font-size: 13px;
+  font-style: italic;
+}
+
+.acb-rephrased--loading::before {
+  content: '';
+  flex-shrink: 0;
+  width: 13px;
+  height: 13px;
+  border: 2px solid #d7dadc;
+  border-top-color: #1565c0;
+  border-radius: 50%;
+  animation: acb-spin 0.8s linear infinite;
+}
+
+@keyframes acb-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ── Typing-prevention panel ─────────────────────────────────── */
 .acb-prevention-panel {
   box-sizing: border-box;

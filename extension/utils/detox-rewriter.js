@@ -1,7 +1,14 @@
-// Lexicon-based detoxification — highlights toxic words and rewrites them
-// to a neutral alternative so readers get a calmer version of harmful comments.
+// Detox rewriter — rephrases toxic comments.
+// Primary: Gemini 2.0 Flash API (set GEMINI_API_KEY below).
+// Fallback: lexicon-based word substitution when API is unavailable.
 (() => {
-  // toxic word → neutral replacement  (longest entries first for correct regex order)
+  // ── API key ─────────────────────────────────────────────────────────────
+  // Get a free key at https://aistudio.google.com/apikey then paste it here.
+  const GEMINI_API_KEY = '';
+  const GEMINI_URL =
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+
+  // ── Lexicon fallback ─────────────────────────────────────────────────────
   const RAW_MAP = [
     ['kill yourself',  'please seek help'],
     ['shut up',        'please stop'],
@@ -50,31 +57,55 @@
     ['kys',            'please get help'],
   ];
 
-  // Build sorted map (longest phrase first avoids partial matches)
   const MAP = new Map(RAW_MAP);
   const PATTERN = new RegExp(
     '\\b(' +
-    RAW_MAP
-      .map(([w]) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('|') +
+    RAW_MAP.map(([w]) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') +
     ')\\b',
     'gi'
   );
 
-  // Returns a cleaned/rephrased copy of the text
-  const rephrase = (text) => {
-    let out = text
-      // word substitutions
+  const rephrase = (text) =>
+    text
       .replace(PATTERN, m => MAP.get(m.toLowerCase()) ?? m)
-      // soften ALL-CAPS shouting  (3+ uppercase letters)
       .replace(/\b([A-Z]{3,})\b/g, m => m[0] + m.slice(1).toLowerCase())
-      // collapse repeated punctuation  !!!  →  !
       .replace(/([!?]){2,}/g, '$1');
-    return out;
+
+  // ── Gemini API call ──────────────────────────────────────────────────────
+  const rephraseAsync = async (text) => {
+    if (!GEMINI_API_KEY) return rephrase(text);
+
+    try {
+      const resp = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text:
+                'You are helping make online conversations healthier. ' +
+                'Rephrase the following toxic or harmful comment into a kinder, ' +
+                'more constructive version that keeps any valid underlying point ' +
+                'without offensive language. Keep it brief and in the same language. ' +
+                'Return only the rephrased text — no explanation, no quotes.\n\n' +
+                `Original: ${text}`
+            }]
+          }],
+          generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
+        })
+      });
+
+      if (!resp.ok) return rephrase(text);
+
+      const data = await resp.json();
+      const result = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+      return result || rephrase(text);
+    } catch (_) {
+      return rephrase(text);
+    }
   };
 
-  // Wraps every matched toxic word in a <mark class="acb-toxic-word"> inside rootNode.
-  // Safe to call multiple times — guarded by data-acb-highlighted attribute.
+  // ── Toxic word highlighting ──────────────────────────────────────────────
   const highlightInNode = (rootNode) => {
     if (!rootNode || rootNode.dataset.acbHighlighted) return;
     rootNode.dataset.acbHighlighted = '1';
@@ -117,5 +148,5 @@
     }
   };
 
-  window.detoxRewriter = { rephrase, highlightInNode };
+  window.detoxRewriter = { rephrase, rephraseAsync, highlightInNode };
 })();

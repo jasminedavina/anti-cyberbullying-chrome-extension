@@ -9,6 +9,7 @@
   ],
   "host_permissions": [
     "https://cdn.jsdelivr.net/*",
+    "https://generativelanguage.googleapis.com/*",
     "https://reddit.com/*",
     "https://*.reddit.com/*",
     "https://www.reddit.com/*",

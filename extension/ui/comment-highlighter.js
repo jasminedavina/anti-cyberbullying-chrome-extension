@@ -35,9 +35,19 @@
     bodyNode.appendChild(overlay);
   };
 
-  const buildRephrasedPanel = (bodyNode) => {
+  const buildRephrasedPanel = async (bodyNode) => {
     const originalText = bodyNode.innerText.trim();
-    const rephrased    = window.detoxRewriter?.rephrase(originalText) ?? originalText;
+
+    // Show spinner while Gemini (or lexicon fallback) processes the text
+    const loader = document.createElement('div');
+    loader.className = 'acb-rephrased acb-rephrased--loading';
+    loader.textContent = 'Rephrasing…';
+    bodyNode.appendChild(loader);
+
+    const rephrased = await (window.detoxRewriter?.rephraseAsync(originalText)
+      ?? Promise.resolve(originalText));
+
+    loader.remove();
 
     const origChildren = Array.from(bodyNode.children).filter(
       el => !el.classList.contains('acb-rephrased')
