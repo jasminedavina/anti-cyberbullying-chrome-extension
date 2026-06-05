@@ -1,14 +1,27 @@
-/* ── Labels ──────────────────────────────────────────────────── */
-/* Badge is prepended inside div[slot="comment"] so it is scoped to
-   exactly its own comment. position:relative + high z-index keeps it
-   above the blur overlay; the blur CSS also explicitly excludes it. */
-.acb-label {
-  display: inline-block;
+/* ── Label pill via ::before — sits on the shreddit-comment host element ──── */
+/* Using ::before on the host element guarantees the label is always outside  */
+/* the blurred body slot and can never be duplicated by DOM insertion.        */
+
+/* Give the comment element a stacking context so ::before can be positioned */
+shreddit-comment.acb-comment--safe,
+shreddit-comment.acb-comment--toxic,
+div[data-testid="comment"].acb-comment--safe,
+div[data-testid="comment"].acb-comment--toxic {
   position: relative;
-  z-index: 20;           /* above .acb-reveal-overlay (z-index:10) */
-  margin: 0 0 4px 0;
+}
+
+shreddit-comment.acb-comment--safe::before,
+shreddit-comment.acb-comment--toxic::before,
+div[data-testid="comment"].acb-comment--safe::before,
+div[data-testid="comment"].acb-comment--toxic::before {
+  content: attr(data-acb-label);
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  z-index: 50;
+  display: inline-block;
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: 3px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -18,8 +31,11 @@
   pointer-events: none;
 }
 
-.acb-label--safe  { background: #2e7d32; }
-.acb-label--toxic { background: #c62828; }
+shreddit-comment.acb-comment--safe::before,
+div[data-testid="comment"].acb-comment--safe::before  { background: #2e7d32; }
+
+shreddit-comment.acb-comment--toxic::before,
+div[data-testid="comment"].acb-comment--toxic::before { background: #c62828; }
 
 /* ── Comment outline ─────────────────────────────────────────── */
 .acb-comment { position: relative; }
@@ -29,11 +45,11 @@
 
 /* ── Blur: direct content children only (no bleed into nested comments) ── */
 .acb-comment-body--blurred {
-  position: relative; /* establishes stacking context for the overlay */
+  position: relative; /* stacking context for the overlay */
 }
 
-/* Blur every direct child EXCEPT the overlay and the label badge */
-.acb-comment-body--blurred > *:not(.acb-reveal-overlay):not(.acb-label) {
+/* Blur every direct child EXCEPT the overlay */
+.acb-comment-body--blurred > *:not(.acb-reveal-overlay) {
   filter: blur(6px);
   user-select: none;
   pointer-events: none;
@@ -41,8 +57,6 @@
 }
 
 /* ── "Tap to reveal" overlay ─────────────────────────────────── */
-/* Sits as an absolute sibling on top of the blurred children.
-   Because it is NOT a child of any blurred element, it is never blurred. */
 .acb-reveal-overlay {
   position: absolute;
   inset: 0;
@@ -60,7 +74,6 @@
   background: rgba(0, 0, 0, 0.06);
 }
 
-/* The "Tap to reveal" pill — dark background ensures it reads on any blurred content */
 .acb-reveal-text {
   padding: 5px 14px;
   border-radius: 20px;
@@ -99,18 +112,23 @@
   margin-bottom: 7px;
 }
 
-.acb-heatmap__icon { font-size: 14px; }
+.acb-heatmap__icon  { font-size: 14px; }
+.acb-heatmap__title { font-weight: 700; font-size: 12px; flex: 1; color: #1c1c1c; }
+.acb-heatmap__health { font-weight: 700; font-size: 12px; }
 
-.acb-heatmap__title {
-  font-weight: 700;
-  font-size: 12px;
-  flex: 1;
-  color: #1c1c1c;
+/* Scanning activity dot */
+.acb-heatmap__scanning--dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0079d3;
+  flex-shrink: 0;
+  animation: acb-scan-dot 1s ease-in-out infinite;
 }
 
-.acb-heatmap__health {
-  font-weight: 700;
-  font-size: 12px;
+@keyframes acb-scan-dot {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.3; transform: scale(0.7); }
 }
 
 .acb-heatmap__track {
@@ -126,6 +144,11 @@
   border-radius: 3px;
   width: 0%;
   transition: width 0.4s ease, background 0.4s ease;
+}
+
+@keyframes acb-scan-pulse {
+  0%, 100% { opacity: 0.25; }
+  50%       { opacity: 0.7; }
 }
 
 .acb-heatmap__stats {

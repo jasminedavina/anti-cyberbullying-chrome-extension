@@ -1,9 +1,4 @@
 (() => {
-  const LABELS = {
-    safe:  { text: 'Safe',  className: 'acb-label--safe'  },
-    toxic: { text: 'Toxic', className: 'acb-label--toxic' }
-  };
-
   const BODY_SELECTORS = [
     'div[slot="comment"]',
     'div[data-testid="comment"]',
@@ -19,35 +14,7 @@
     return commentNode;
   };
 
-  // Badge is prepended INSIDE the comment's body slot (div[slot="comment"]).
-  // This scopes it to the exact comment element and prevents it from appearing
-  // inside a parent comment's rendered area (which happened with beforebegin).
-  // The blur CSS and the overlay both exclude .acb-label, so it stays visible.
-  const ensureBadge = (commentNode) => {
-    if (commentNode._acbBadge?.isConnected) return commentNode._acbBadge;
-
-    if (!commentNode.dataset.acbId) {
-      commentNode.dataset.acbId = 'acb' + Math.random().toString(36).slice(2, 9);
-    }
-    const id      = commentNode.dataset.acbId;
-    const body    = findBodyNode(commentNode);
-
-    const existing = body.querySelector(`:scope > .acb-label[data-acb-for="${id}"]`);
-    if (existing) {
-      commentNode._acbBadge = existing;
-      return existing;
-    }
-
-    const badge = document.createElement('div');
-    badge.className = 'acb-label';
-    badge.dataset.acbFor = id;
-    body.prepend(badge);
-    commentNode._acbBadge = badge;
-    return badge;
-  };
-
-  // Overlay sits INSIDE bodyNode, after the badge, covering only the blurred text.
-  // z-index is lower than the badge, so the badge remains visible on top.
+  // Overlay sits INSIDE bodyNode, covering only the blurred text.
   const ensureOverlay = (bodyNode, commentNode) => {
     if (bodyNode.querySelector(':scope > .acb-reveal-overlay')) return;
 
@@ -72,9 +39,8 @@
     const originalText = bodyNode.innerText.trim();
     const rephrased    = window.detoxRewriter?.rephrase(originalText) ?? originalText;
 
-    // Children to hide/show — exclude badge and the rephrased panel itself
     const origChildren = Array.from(bodyNode.children).filter(
-      el => !el.classList.contains('acb-rephrased') && !el.classList.contains('acb-label')
+      el => !el.classList.contains('acb-rephrased')
     );
 
     if (!rephrased || rephrased === originalText) {
@@ -92,7 +58,7 @@
 
     const titleEl     = document.createElement('span');
     titleEl.className = 'acb-rephrased__title';
-    titleEl.textContent = '📖 Rephrased for easier reading';
+    titleEl.textContent = 'Rephrased for easier reading';
 
     const toggleBtn   = document.createElement('button');
     toggleBtn.type    = 'button';
@@ -137,19 +103,17 @@
     bodyNode.querySelector(':scope > .acb-reveal-overlay')?.remove();
   };
 
+  // Label is rendered purely via CSS ::before on the comment node itself —
+  // completely outside the blurred body slot, always visible.
   const applyLabel = (commentNode, label) => {
     if (!commentNode) return;
-    const normalized = LABELS[label] ? label : 'safe';
-    const badge = ensureBadge(commentNode);
-    const { text, className } = LABELS[normalized];
-
-    badge.textContent = text;
-    badge.classList.remove('acb-label--safe', 'acb-label--toxic');
-    badge.classList.add(className);
+    const normalized = (label === 'toxic') ? 'toxic' : 'safe';
 
     commentNode.classList.add('acb-comment');
     commentNode.classList.remove('acb-comment--safe', 'acb-comment--toxic');
     commentNode.classList.add(`acb-comment--${normalized}`);
+    // ::before uses content: attr(data-acb-label) to show the pill text
+    commentNode.dataset.acbLabel = normalized === 'toxic' ? 'Toxic' : 'Safe';
 
     if (normalized === 'safe') clearBlur(commentNode);
     else applyBlur(commentNode);

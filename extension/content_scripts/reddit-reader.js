@@ -26,7 +26,9 @@
     const mock = modelClient.mockPredict(text);
     highlighter.applyLabel(node, mock.label);
 
-    // Pass 2 — real ONNX model; update label (and heatmap) when ready.
+    // Pass 2 — real ONNX model; markPending shows "Analyzing…" in heatmap,
+    // increment() resolves it to the health bar when the prediction comes back.
+    heatmap?.markPending();
     modelClient
       .predict(text)
       .then((real) => {
