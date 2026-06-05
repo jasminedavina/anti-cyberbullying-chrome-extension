@@ -4,16 +4,18 @@
     toxic: { text: 'Toxic', className: 'acb-label--toxic' }
   };
 
-  // Body selectors: the slot div holds the comment text in new Reddit
   const BODY_SELECTORS = ['div[slot="comment"]', 'div[data-testid="comment"]', 'div[data-test-id="comment"]', '.md'];
 
+  // Place badge as a DOM sibling BEFORE the comment element so it is
+  // completely outside shreddit-comment's shadow DOM and never blurred.
   const ensureBadge = (commentNode) => {
-    let badge = commentNode.querySelector(':scope > .acb-label');
-    if (!badge) {
-      badge = document.createElement('span');
-      badge.className = 'acb-label';
-      commentNode.prepend(badge);
+    if (commentNode._acbBadge && commentNode._acbBadge.isConnected) {
+      return commentNode._acbBadge;
     }
+    const badge = document.createElement('div');
+    badge.className = 'acb-label';
+    commentNode.insertAdjacentElement('beforebegin', badge);
+    commentNode._acbBadge = badge;
     return badge;
   };
 
@@ -25,9 +27,9 @@
     return commentNode;
   };
 
-  // Injects "Tap to reveal" overlay INSIDE the body node.
-  // The overlay is a sibling of the blurred children, not a child of them,
-  // so it is NOT affected by the filter: blur on its siblings.
+  // Overlay sits INSIDE the body node as a sibling of the blurred children.
+  // Because filter:blur only affects an element's own subtree, the overlay
+  // (a sibling, not a child of any blurred element) is always sharp.
   const ensureOverlay = (bodyNode, commentNode) => {
     if (bodyNode.querySelector(':scope > .acb-reveal-overlay')) return;
 
