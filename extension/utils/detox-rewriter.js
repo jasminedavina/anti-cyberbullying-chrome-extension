@@ -4,7 +4,7 @@
 (() => {
   // ── API key ─────────────────────────────────────────────────────────────
   // Get a free key at https://aistudio.google.com/apikey then paste it here.
-  const GEMINI_API_KEY = '';
+  const GEMINI_API_KEY = ''; // paste your key from https://aistudio.google.com/apikey
   const GEMINI_URL =
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
