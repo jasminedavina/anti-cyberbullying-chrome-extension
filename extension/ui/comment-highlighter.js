@@ -4,10 +4,15 @@
     toxic: { text: 'Toxic', className: 'acb-label--toxic' }
   };
 
-  const BODY_SELECTORS = ['div[slot="comment"]', 'div[data-testid="comment"]', 'div[data-test-id="comment"]', '.md'];
+  const BODY_SELECTORS = [
+    'div[slot="comment"]',
+    'div[data-testid="comment"]',
+    'div[data-test-id="comment"]',
+    '.md'
+  ];
 
-  // Place badge as a DOM sibling BEFORE the comment element so it is
-  // completely outside shreddit-comment's shadow DOM and never blurred.
+  // Inserted BEFORE shreddit-comment so it is outside the shadow DOM
+  // and can never be blurred.
   const ensureBadge = (commentNode) => {
     if (commentNode._acbBadge && commentNode._acbBadge.isConnected) {
       return commentNode._acbBadge;
@@ -20,16 +25,74 @@
   };
 
   const findBodyNode = (commentNode) => {
-    for (const selector of BODY_SELECTORS) {
-      const match = commentNode.querySelector(selector);
-      if (match) return match;
+    for (const sel of BODY_SELECTORS) {
+      const m = commentNode.querySelector(sel);
+      if (m) return m;
     }
     return commentNode;
   };
 
-  // Overlay sits INSIDE the body node as a sibling of the blurred children.
-  // Because filter:blur only affects an element's own subtree, the overlay
-  // (a sibling, not a child of any blurred element) is always sharp.
+  // Build the rephrased panel and inject it inside bodyNode.
+  // Original children are hidden; "See original" reveals them with highlights.
+  const buildRephrasedPanel = (bodyNode) => {
+    const originalText = bodyNode.innerText.trim();
+    const rephrased    = window.detoxRewriter?.rephrase(originalText) ?? originalText;
+
+    const origChildren = Array.from(bodyNode.children).filter(
+      el => !el.classList.contains('acb-rephrased')
+    );
+
+    // If nothing changed, just highlight the original words
+    if (!rephrased || rephrased === originalText) {
+      window.detoxRewriter?.highlightInNode(bodyNode);
+      return;
+    }
+
+    // Hide original content, show rephrased by default
+    origChildren.forEach(el => (el.style.display = 'none'));
+
+    const panel = document.createElement('div');
+    panel.className = 'acb-rephrased';
+
+    const header = document.createElement('div');
+    header.className = 'acb-rephrased__header';
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'acb-rephrased__title';
+    titleEl.textContent = '📖 Rephrased for easier reading';
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'acb-rephrased__toggle';
+    toggleBtn.textContent = 'See original';
+
+    const rephrasedBody = document.createElement('div');
+    rephrasedBody.className = 'acb-rephrased__body';
+    rephrasedBody.textContent = rephrased;
+
+    let showingRephrased = true;
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showingRephrased = !showingRephrased;
+      if (showingRephrased) {
+        origChildren.forEach(el => (el.style.display = 'none'));
+        rephrasedBody.style.display = '';
+        toggleBtn.textContent = 'See original';
+      } else {
+        origChildren.forEach(el => (el.style.display = ''));
+        rephrasedBody.style.display = 'none';
+        toggleBtn.textContent = 'See rephrased';
+        window.detoxRewriter?.highlightInNode(bodyNode);
+      }
+    });
+
+    header.append(titleEl, toggleBtn);
+    panel.append(header, rephrasedBody);
+    bodyNode.appendChild(panel);
+  };
+
+  // Overlay sits inside bodyNode as a sibling of its children —
+  // not a child of any blurred element — so it is never blurred.
   const ensureOverlay = (bodyNode, commentNode) => {
     if (bodyNode.querySelector(':scope > .acb-reveal-overlay')) return;
 
@@ -45,6 +108,7 @@
       bodyNode.classList.remove('acb-comment-body--blurred');
       commentNode.classList.add('acb-comment--revealed');
       overlay.remove();
+      buildRephrasedPanel(bodyNode);
     });
 
     bodyNode.appendChild(overlay);
@@ -60,8 +124,7 @@
   const clearBlur = (commentNode) => {
     const bodyNode = findBodyNode(commentNode);
     bodyNode.classList.remove('acb-comment-body--blurred');
-    const overlay = bodyNode.querySelector(':scope > .acb-reveal-overlay');
-    if (overlay) overlay.remove();
+    bodyNode.querySelector(':scope > .acb-reveal-overlay')?.remove();
   };
 
   const applyLabel = (commentNode, label) => {
@@ -78,11 +141,8 @@
     commentNode.classList.remove('acb-comment--safe', 'acb-comment--toxic');
     commentNode.classList.add(`acb-comment--${normalized}`);
 
-    if (normalized === 'safe') {
-      clearBlur(commentNode);
-    } else {
-      applyBlur(commentNode);
-    }
+    if (normalized === 'safe') clearBlur(commentNode);
+    else applyBlur(commentNode);
   };
 
   window.commentHighlighter = { applyLabel };

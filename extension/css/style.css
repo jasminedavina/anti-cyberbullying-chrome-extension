@@ -75,6 +75,123 @@
   50%       { opacity: 0.6; transform: scale(1.05); }
 }
 
+/* ── Thread heatmap ──────────────────────────────────────────── */
+.acb-heatmap {
+  margin: 0 0 12px 0;
+  padding: 10px 14px;
+  border: 1px solid #edeff1;
+  border-radius: 8px;
+  background: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  color: #1c1c1c;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.acb-heatmap__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+
+.acb-heatmap__icon { font-size: 14px; }
+
+.acb-heatmap__title {
+  font-weight: 700;
+  font-size: 12px;
+  flex: 1;
+  color: #1c1c1c;
+}
+
+.acb-heatmap__health {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.acb-heatmap__track {
+  height: 6px;
+  border-radius: 3px;
+  background: #edeff1;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.acb-heatmap__fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.4s ease, background 0.4s ease;
+}
+
+.acb-heatmap__stats {
+  display: flex;
+  gap: 4px;
+  color: #878a8c;
+  font-size: 11px;
+}
+
+.acb-heatmap__safe  { color: #2e7d32; font-weight: 600; }
+.acb-heatmap__toxic { color: #c62828; font-weight: 600; }
+.acb-heatmap__pct   { margin-left: auto; color: #5f6368; }
+
+/* ── Toxic keyword highlights ────────────────────────────────── */
+mark.acb-toxic-word {
+  background: rgba(198, 40, 40, 0.12);
+  color: #b71c1c;
+  border-radius: 3px;
+  padding: 0 2px;
+  font-style: normal;
+  cursor: help;
+  text-decoration: underline;
+  text-decoration-style: wavy;
+  text-decoration-color: rgba(198, 40, 40, 0.45);
+}
+
+/* ── Rephrased panel ─────────────────────────────────────────── */
+.acb-rephrased {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid #1565c0;
+  border-radius: 0 6px 6px 0;
+  background: rgba(21, 101, 192, 0.05);
+  font-family: Arial, sans-serif;
+}
+
+.acb-rephrased__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.acb-rephrased__title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1565c0;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.acb-rephrased__toggle {
+  font-size: 11px;
+  color: #5f6368;
+  background: none;
+  border: 1px solid #d7dadc;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.acb-rephrased__toggle:hover { border-color: #878a8c; color: #1c1c1c; }
+
+.acb-rephrased__body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #1c1c1c;
+}
+
 /* ── Typing-prevention panel ─────────────────────────────────── */
 .acb-prevention-panel {
   box-sizing: border-box;

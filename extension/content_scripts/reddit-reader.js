@@ -3,6 +3,8 @@
   const highlighter = window.commentHighlighter;
   const modelClient = window.acbModelClient;
 
+  const heatmap = window.threadHeatmap;
+
   if (!parser || !highlighter || !modelClient) {
     console.warn('Anti-cyberbullying: missing parser, highlighter, or model client.');
     return;
@@ -23,6 +25,7 @@
         .predict(text)
         .then((prediction) => {
           highlighter.applyLabel(node, prediction.label);
+          heatmap?.increment(prediction.label);
         })
         .catch((error) => {
           console.warn('Anti-cyberbullying: comment prediction failed.', error);

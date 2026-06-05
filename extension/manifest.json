@@ -34,7 +34,9 @@
       "js": [
         "utils/reddit-parser.js",
         "utils/model-client.js",
+        "utils/detox-rewriter.js",
         "ui/comment-highlighter.js",
+        "ui/thread-heatmap.js",
         "content_scripts/reddit-reader.js",
         "content_scripts/typing-prevention.js"
       ],
