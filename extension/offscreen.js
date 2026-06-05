@@ -17,10 +17,19 @@ const loadModel = () => {
     // Load WASM backend from CDN (cached in browser after first fetch)
     ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.3/dist/';
     ort.env.wasm.numThreads = 1;
+    // Disable SIMD — the SIMD path has memory-alignment bugs with INT8 quantized
+    // MatMulInteger ops, causing "memory access out of bounds" WASM traps.
+    ort.env.wasm.simd = false;
 
-    // Load ONNX session from bundled model file (105 MB, one-time load)
+    // Load ONNX session from bundled model file (105 MB, one-time load).
+    // Pin the dynamic axes ('batch' and 'seq' from export_to_onnx.py) to fixed
+    // values so ORT pre-allocates the right buffer sizes and avoids bounds errors.
     const modelUrl = chrome.runtime.getURL('models/model.onnx');
-    session = await ort.InferenceSession.create(modelUrl, { executionProviders: ['wasm'] });
+    session = await ort.InferenceSession.create(modelUrl, {
+      executionProviders: ['wasm'],
+      freeDimensionOverrides: { batch: 1, seq: 128 },
+    });
+    console.log('[ACB] Model inputs:', session.inputNames);
 
     // Load vocab from bundled tokenizer.json and build tokenizer
     const tokUrl   = chrome.runtime.getURL('models/tokenizer.json');
