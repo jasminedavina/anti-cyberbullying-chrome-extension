@@ -4,22 +4,25 @@
   "version": "0.1.0",
   "description": "Detects toxic Reddit comments in real time.",
   "permissions": [
-    "storage"
+    "storage",
+    "offscreen"
   ],
   "host_permissions": [
-    "http://127.0.0.1:5000/*",
-    "https://huggingface.co/*",
-    "https://cdn-lfs.huggingface.co/*",
-    "https://cdn-lfs-us-1.huggingface.co/*",
+    "https://cdn.jsdelivr.net/*",
     "https://reddit.com/*",
     "https://*.reddit.com/*",
     "https://www.reddit.com/*",
     "https://old.reddit.com/*"
   ],
   "background": {
-    "service_worker": "background.js",
-    "type": "module"
+    "service_worker": "background.js"
   },
+  "web_accessible_resources": [
+    {
+      "resources": ["models/*", "utils/ort.min.js", "utils/bert-tokenizer.js", "offscreen.html", "offscreen.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "content_scripts": [
     {
       "matches": [

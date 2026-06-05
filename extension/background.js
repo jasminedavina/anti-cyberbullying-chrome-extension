@@ -1,47 +1,50 @@
-// Service worker: loads ToxicBERT model via Transformers.js and handles predictions.
-// Model is downloaded from HuggingFace (~90MB quantized) on first use, then cached.
-import { pipeline } from './utils/transformers.min.js';
+// Service worker: routes PREDICT requests to the offscreen document.
+// The offscreen document runs the ONNX model (Person C's ToxicBERT).
 
-const MODEL_ID = 'Xenova/toxic-bert';
-const TOXIC_LABELS  = new Set(['toxic', 'severe_toxic', 'threat']);
-const WARNING_LABELS = new Set(['obscene', 'insult', 'identity_hate']);
+const OFFSCREEN_URL = 'offscreen.html';
+let creatingOffscreen = null;
 
-let classifier = null;
-let loading = null;
-
-const getClassifier = () => {
-  if (classifier) return Promise.resolve(classifier);
-  if (loading) return loading;
-  loading = pipeline('text-classification', MODEL_ID, {
-    quantized: true,
-    multi_label: true,
-  }).then(clf => { classifier = clf; return clf; });
-  return loading;
-};
-
-const mapResults = (results) => {
-  const scores = {};
-  for (const { label, score } of results) scores[label.toLowerCase()] = score;
-
-  const toxicScore   = Math.max(...[...TOXIC_LABELS].map(l => scores[l] ?? 0));
-  const warningScore = Math.max(...[...WARNING_LABELS].map(l => scores[l] ?? 0));
-  const threshold = 0.5;
-
-  if (toxicScore >= threshold)   return { label: 'toxic',   score: toxicScore };
-  if (warningScore >= threshold) return { label: 'warning', score: warningScore };
-  return { label: 'safe', score: 1 - Math.max(toxicScore, warningScore) };
-};
+async function ensureOffscreen() {
+  // hasDocument available since Chrome 116; fall back gracefully for older builds
+  const has = typeof chrome.offscreen?.hasDocument === 'function'
+    ? await chrome.offscreen.hasDocument()
+    : false;
+  if (has) return;
+  if (creatingOffscreen) { await creatingOffscreen; return; }
+  creatingOffscreen = chrome.offscreen.createDocument({
+    url:           OFFSCREEN_URL,
+    reasons:       [chrome.offscreen.Reason.WORKER],
+    justification: 'Run ToxicBERT ONNX model inference in the browser without a server',
+  }).catch(err => {
+    // "already exists" error is OK — another wake-up already created it
+    if (!err.message?.includes('already')) throw err;
+  });
+  await creatingOffscreen;
+  creatingOffscreen = null;
+}
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-  if (message.type !== 'PREDICT') return false;
+  // Ignore messages already routed to the offscreen document
+  if (message.type !== 'PREDICT' || message.target === 'offscreen') return false;
 
-  getClassifier()
-    .then(clf => clf(message.text, { topk: null }))
-    .then(results => sendResponse({ ...mapResults(results), suggestion: '' }))
+  ensureOffscreen()
+    .then(() => {
+      chrome.runtime.sendMessage(
+        { target: 'offscreen', type: 'PREDICT', text: message.text },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn('[ACB] Offscreen error:', chrome.runtime.lastError.message);
+            sendResponse(null);
+          } else {
+            sendResponse(response);
+          }
+        }
+      );
+    })
     .catch(err => {
-      console.error('ToxicBERT prediction failed:', err);
-      sendResponse(null); // content script falls back to mock
+      console.error('[ACB] Could not create offscreen document:', err);
+      sendResponse(null);
     });
 
-  return true; // keep message channel open for async response
+  return true;
 });
