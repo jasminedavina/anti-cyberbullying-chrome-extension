@@ -53,6 +53,7 @@ torch.onnx.export(
     opset_version=12,
     do_constant_folding=True,
 )
+
 print(f'  Raw ONNX: {RAW_ONNX.stat().st_size / 1e6:.1f} MB')
 
 print('Step 3/3 — Merging external data then quantizing to INT8...')

@@ -1,12 +1,14 @@
 // Detox rewriter — rephrases toxic comments.
-// Primary: Gemini 2.0 Flash API (set GEMINI_API_KEY below).
-// Fallback: lexicon-based word substitution when API is unavailable.
+// Primary: Groq API (free, fast — get key at https://console.groq.com/keys)
+// Secondary: Gemini API (get key at https://aistudio.google.com/apikey)
+// Fallback: lexicon-based word substitution when both APIs are unavailable.
 (() => {
-  // ── API key ─────────────────────────────────────────────────────────────
-  // Get a free key at https://aistudio.google.com/apikey then paste it here.
-  const GEMINI_API_KEY = ''; // paste your key from https://aistudio.google.com/apikey
-  const GEMINI_URL =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+  // ── API keys ─────────────────────────────────────────────────────────────
+  const GROQ_API_KEY   = ''; // get free key at https://console.groq.com/keys
+  const GEMINI_API_KEY = ''; // get free key at https://aistudio.google.com/apikey
+
+  const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
+  const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
   // ── Lexicon fallback ─────────────────────────────────────────────────────
   const RAW_MAP = [
@@ -71,38 +73,77 @@
       .replace(/\b([A-Z]{3,})\b/g, m => m[0] + m.slice(1).toLowerCase())
       .replace(/([!?]){2,}/g, '$1');
 
-  // ── Gemini API call ──────────────────────────────────────────────────────
+  const DETOX_PROMPT =
+    'You are helping make online conversations healthier. ' +
+    'Rephrase the following toxic or harmful comment into a kinder, ' +
+    'more constructive version that keeps any valid underlying point ' +
+    'without offensive language. Keep it brief and in the same language. ' +
+    'Return only the rephrased text — no explanation, no quotes.\n\n' +
+    'Original: ';
+
+  // ── Groq API (primary) ────────────────────────────────────────────────────
+  const rephraseWithGroq = async (text) => {
+    const resp = await fetch(GROQ_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: 'llama-3.1-8b-instant',
+        messages: [{ role: 'user', content: DETOX_PROMPT + text }],
+        max_tokens: 200,
+        temperature: 0.7,
+      }),
+    });
+    if (!resp.ok) throw new Error(`Groq ${resp.status}`);
+    const data = await resp.json();
+    return data?.choices?.[0]?.message?.content?.trim() || null;
+  };
+
+  // ── Gemini API (secondary) ────────────────────────────────────────────────
+  const rephraseWithGemini = async (text) => {
+    const resp = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: DETOX_PROMPT + text }] }],
+        generationConfig: { maxOutputTokens: 200, temperature: 0.7 },
+      }),
+    });
+    if (!resp.ok) throw new Error(`Gemini ${resp.status}`);
+    const data = await resp.json();
+    return data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || null;
+  };
+
+  // ── Orchestrator: Groq → Gemini → lexicon ────────────────────────────────
   const rephraseAsync = async (text) => {
-    if (!GEMINI_API_KEY) return rephrase(text);
-
-    try {
-      const resp = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{
-            parts: [{
-              text:
-                'You are helping make online conversations healthier. ' +
-                'Rephrase the following toxic or harmful comment into a kinder, ' +
-                'more constructive version that keeps any valid underlying point ' +
-                'without offensive language. Keep it brief and in the same language. ' +
-                'Return only the rephrased text — no explanation, no quotes.\n\n' +
-                `Original: ${text}`
-            }]
-          }],
-          generationConfig: { maxOutputTokens: 200, temperature: 0.7 }
-        })
-      });
-
-      if (!resp.ok) return rephrase(text);
-
-      const data = await resp.json();
-      const result = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      return result || rephrase(text);
-    } catch (_) {
-      return rephrase(text);
+    if (GROQ_API_KEY) {
+      try {
+        const result = await rephraseWithGroq(text);
+        if (result) {
+          console.log('[ACB] Rephrase: Groq succeeded →', result);
+          return result;
+        }
+      } catch (e) {
+        console.log('[ACB] Rephrase: Groq failed, trying Gemini…', e.message);
+      }
     }
+
+    if (GEMINI_API_KEY) {
+      try {
+        const result = await rephraseWithGemini(text);
+        if (result) {
+          console.log('[ACB] Rephrase: Gemini succeeded →', result);
+          return result;
+        }
+      } catch (e) {
+        console.log('[ACB] Rephrase: Gemini failed, using lexicon fallback.', e.message);
+      }
+    }
+
+    console.log('[ACB] Rephrase: using lexicon fallback');
+    return rephrase(text);
   };
 
   // ── Toxic word highlighting ──────────────────────────────────────────────
