@@ -78,11 +78,18 @@
     'Rephrase the following toxic or harmful comment into a kinder, ' +
     'more constructive version that keeps any valid underlying point ' +
     'without offensive language. Keep it brief and in the same language. ' +
-    'Return only the rephrased text — no explanation, no quotes.\n\n' +
-    'Original: ';
+    'Return only the rephrased text — no explanation, no quotes.\n\n';
+
+  const buildPrompt = (text, context = '') => {
+    const contextBlock = context
+      ? `Context:\n${context.trim()}\n\n`
+      : '';
+
+    return DETOX_PROMPT + contextBlock + 'Original: ' + text;
+  };
 
   // ── Groq API (primary) ────────────────────────────────────────────────────
-  const rephraseWithGroq = async (text) => {
+  const rephraseWithGroq = async (text, context = '') => {
     const resp = await fetch(GROQ_URL, {
       method: 'POST',
       headers: {
@@ -91,7 +98,7 @@
       },
       body: JSON.stringify({
         model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: DETOX_PROMPT + text }],
+        messages: [{ role: 'user', content: buildPrompt(text, context) }],
         max_tokens: 200,
         temperature: 0.7,
       }),
@@ -102,12 +109,12 @@
   };
 
   // ── Gemini API (secondary) ────────────────────────────────────────────────
-  const rephraseWithGemini = async (text) => {
+  const rephraseWithGemini = async (text, context = '') => {
     const resp = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: DETOX_PROMPT + text }] }],
+        contents: [{ parts: [{ text: buildPrompt(text, context) }] }],
         generationConfig: { maxOutputTokens: 200, temperature: 0.7 },
       }),
     });
@@ -117,10 +124,10 @@
   };
 
   // ── Orchestrator: Groq → Gemini → lexicon ────────────────────────────────
-  const rephraseAsync = async (text) => {
+  const rephraseAsync = async (text, context = '') => {
     if (GROQ_API_KEY) {
       try {
-        const result = await rephraseWithGroq(text);
+        const result = await rephraseWithGroq(text, context);
         if (result) {
           console.log('[ACB] Rephrase: Groq succeeded →', result);
           return result;
@@ -132,7 +139,7 @@
 
     if (GEMINI_API_KEY) {
       try {
-        const result = await rephraseWithGemini(text);
+        const result = await rephraseWithGemini(text, context);
         if (result) {
           console.log('[ACB] Rephrase: Gemini succeeded →', result);
           return result;
@@ -189,5 +196,7 @@
     }
   };
 
-  window.detoxRewriter = { rephrase, rephraseAsync, highlightInNode };
+  const contextAwareAgent = { rephrase, rephraseAsync, highlightInNode };
+  window.detoxRewriter = contextAwareAgent;
+  window.detoxAgent = contextAwareAgent;
 })();

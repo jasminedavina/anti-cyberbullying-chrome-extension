@@ -21,11 +21,29 @@
     } catch (_) { /* extension context may be invalidated */ }
   };
 
-  const predict = async (text) => {
+  const addSuggestion = async (prediction, text, context = '') => {
+    if (!prediction || prediction.label !== 'toxic') {
+      return { ...prediction, suggestion: prediction?.suggestion || '' };
+    }
+
+    const rewriter = window.detoxRewriter;
+    if (rewriter && typeof rewriter.rephraseAsync === 'function') {
+      try {
+        const suggestion = await rewriter.rephraseAsync(text, context);
+        return { ...prediction, suggestion: suggestion || '' };
+      } catch (error) {
+        console.warn('Anti-cyberbullying: rewrite suggestion failed.', error);
+      }
+    }
+
+    return { ...prediction, suggestion: prediction.suggestion || '' };
+  };
+
+  const predict = async (text, context = '') => {
     const normalized = (text || '').trim();
     if (normalized.length < 3) return { label: 'safe', score: 0.0, suggestion: '' };
 
-    return new Promise((resolve) => {
+    const basePrediction = await new Promise((resolve) => {
       try {
         chrome.runtime.sendMessage({ type: 'PREDICT', text: normalized }, (response) => {
           if (chrome.runtime.lastError || !response) {
@@ -39,6 +57,8 @@
         resolve(mockPredict(normalized));
       }
     });
+
+    return addSuggestion(basePrediction, normalized, context);
   };
 
   window.acbModelClient = { predict, mockPredict, warmup };

@@ -265,7 +265,32 @@ mark.acb-toxic-word {
 .acb-prevention-panel__score  { flex: 0 0 auto; font-size: 12px; font-weight: 700; }
 
 .acb-prevention-panel__message,
-.acb-prevention-panel__rewrite { margin: 6px 0 0; }
+.acb-prevention-panel__rewrite,
+.acb-prevention-panel__status { margin: 6px 0 0; }
+
+.acb-prevention-panel__status {
+  font-size: 12px;
+  color: #5f6368;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.acb-prevention-panel__status--loading::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border: 2px solid #d7dadc;
+  border-top-color: #1565c0;
+  border-radius: 50%;
+  animation: acb-spin 0.8s linear infinite;
+}
+
+.acb-prevention-panel__suggestion {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #edeff1;
+}
 
 .acb-prevention-panel__suggestion {
   margin-top: 8px;
@@ -278,20 +303,6 @@ mark.acb-toxic-word {
   border-radius: 4px;
   background: #f6f7f8;
 }
-
-.acb-prevention-panel__apply {
-  margin-top: 8px;
-  padding: 4px 8px;
-  border: none;
-  border-radius: 4px;
-  background: #0079d3;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.acb-prevention-panel__apply:hover { background: #0060a8; }
 
 .acb-prevention-panel--idle  { border-left-color: #878a8c; }
 .acb-prevention-panel--safe  { border-left-color: #2e7d32; }

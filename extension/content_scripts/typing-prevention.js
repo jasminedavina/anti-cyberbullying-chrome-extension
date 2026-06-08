@@ -78,47 +78,65 @@
     );
   };
 
-  const getEditorText = (editor) => {
-    if ('value' in editor) return editor.value.trim();
+  const findEditableNode = (editor) => {
+    if (!editor) return null;
+    if ('value' in editor) return editor;
+    if (editor.isContentEditable) return editor;
 
-    const shadowText = editor.shadowRoot && (
-      editor.shadowRoot.querySelector('textarea') ||
-      editor.shadowRoot.querySelector('[contenteditable="true"]') ||
-      editor.shadowRoot.querySelector('[role="textbox"]')
-    );
-    if (shadowText) return getEditorText(shadowText);
-
-    return (editor.innerText || editor.textContent || '').trim();
-  };
-
-  const setEditorText = (editor, text) => {
     const shadowEditor = editor.shadowRoot && (
       editor.shadowRoot.querySelector('textarea') ||
       editor.shadowRoot.querySelector('[contenteditable="true"]') ||
       editor.shadowRoot.querySelector('[role="textbox"]')
     );
-    if (shadowEditor) {
-      setEditorText(shadowEditor, text);
-      return;
+    if (shadowEditor) return shadowEditor;
+
+    return editor.querySelector('textarea, [contenteditable="true"], [role="textbox"], [aria-multiline="true"]');
+  };
+
+  const getEditorText = (editor) => {
+    const editable = findEditableNode(editor) || editor;
+    if ('value' in editable) return editable.value.trim();
+    return (editable.innerText || editable.textContent || '').trim();
+  };
+
+  const getEditorContext = (editor) => {
+    const contextFragments = [];
+
+    const commentNode = editor.closest('shreddit-comment, [data-testid="comment"], [data-test-id="comment"]');
+    if (commentNode) {
+      const commentText = (commentNode.innerText || commentNode.textContent || '').trim();
+      if (commentText) {
+        contextFragments.push(`Parent comment: ${commentText}`);
+      }
     }
 
-    editor.focus();
+    const title = document.querySelector('h1')?.innerText?.trim() || document.title?.trim();
+    if (title) {
+      contextFragments.push(`Thread title: ${title}`);
+    }
 
-    if ('value' in editor) {
-      editor.value = text;
-      editor.dispatchEvent(new Event('input', { bubbles: true }));
-      editor.dispatchEvent(new Event('change', { bubbles: true }));
+    return contextFragments.filter(Boolean).join('\n\n').slice(0, 600).trim();
+  };
+
+  const setEditorText = (editor, text) => {
+    const editable = findEditableNode(editor) || editor;
+    editable.focus();
+
+    if ('value' in editable) {
+      editable.value = text;
+      editable.dispatchEvent(new Event('input', { bubbles: true }));
+      editable.dispatchEvent(new Event('change', { bubbles: true }));
       return;
     }
 
     const range = document.createRange();
-    range.selectNodeContents(editor);
+    range.selectNodeContents(editable);
     const selection = window.getSelection();
     selection.removeAllRanges();
     selection.addRange(range);
 
     document.execCommand('insertText', false, text);
-    editor.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
+    editable.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertText', data: text }));
   };
 
   const getPanelAnchor = (editor) =>
@@ -154,13 +172,13 @@
           <span class="acb-prevention-panel__score"></span>
         </div>
         <p class="acb-prevention-panel__message"></p>
+        <p class="acb-prevention-panel__status" hidden></p>
         <div class="acb-prevention-panel__suggestion" hidden>
           <p class="acb-prevention-panel__rewrite"></p>
-          <button type="button" class="acb-prevention-panel__apply">Use rewrite</button>
         </div>
       `;
 
-      if (anchor === editor && editor.parentElement) {
+      if (editor.parentElement) {
         editor.insertAdjacentElement('afterend', panel);
       } else {
         anchor.append(panel);
@@ -169,18 +187,6 @@
 
     if (state) {
       state.panel = panel;
-    }
-
-    const applyButton = panel.querySelector('.acb-prevention-panel__apply');
-    if (!applyButton.dataset.acbBound) {
-      applyButton.dataset.acbBound = 'true';
-      applyButton.addEventListener('click', () => {
-        const state = editorState.get(editor);
-        if (state && state.suggestion) {
-          setEditorText(editor, state.suggestion);
-          runPrediction(editor);
-        }
-      });
     }
 
     return panel;
@@ -200,15 +206,21 @@
       'acb-prevention-panel--toxic'
     );
 
+    const status = panel.querySelector('.acb-prevention-panel__status');
+
     if (loading) {
       panel.classList.add('acb-prevention-panel--idle');
       title.textContent = 'Checking tone...';
       score.textContent = '';
       message.textContent = 'Analyzing your comment before you post.';
+      status.textContent = 'Agent is reviewing your draft…';
+      status.hidden = false;
+      status.classList.add('acb-prevention-panel__status--loading');
       suggestionBox.hidden = true;
       return;
     }
 
+    status.classList.remove('acb-prevention-panel__status--loading');
     const label = prediction.label || 'safe';
     const confidence = Math.round((prediction.score || 0) * 100);
     panel.classList.add(`acb-prevention-panel--${label}`);
@@ -217,9 +229,17 @@
     if (label === 'toxic') {
       title.textContent = 'Toxic language detected';
       message.textContent = 'This comment may hurt someone. Consider rewriting it before posting.';
+      if (prediction.suggestion) {
+        status.textContent = 'Agent suggested a safer rewrite.';
+        status.hidden = false;
+      } else {
+        status.textContent = 'Agent is still evaluating your draft.';
+        status.hidden = false;
+      }
     } else {
       title.textContent = 'Looks respectful';
       message.textContent = 'No bullying language detected in this draft.';
+      status.hidden = true;
     }
 
     if (prediction.suggestion) {
@@ -253,7 +273,7 @@
     setPanelState(editor, null, true);
 
     try {
-      const prediction = await modelClient.predict(text);
+      const prediction = await modelClient.predict(text, getEditorContext(editor));
       if (state.requestId !== requestId) return;
       state.suggestion = prediction.suggestion || '';
       setPanelState(editor, prediction);
